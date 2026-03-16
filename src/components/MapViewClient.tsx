@@ -1,20 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, CircleMarker } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, useMap } from "react-leaflet";
 import { Clock, List, X } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-import { useMap } from "react-leaflet";
-
-// Fix leaflet default icon
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
 
 const SOURCE_COLORS: Record<string, string> = {
   temple: "#E8640A",
@@ -54,12 +41,28 @@ export default function MapViewClient({ posts }: { posts: any[] }) {
   ]);
   const [showList, setShowList] = useState(false);
   const [mapRef, setMapRef] = useState<any>(null);
+  const [leafletReady, setLeafletReady] = useState(false);
 
   useEffect(() => {
+    // All leaflet imports must be client-side only
+    const L = require("leaflet");
+    require("leaflet/dist/leaflet.css");
+
+    delete (L.Icon.Default.prototype as any)._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl:
+        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+      iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+      shadowUrl:
+        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+    });
+
     navigator.geolocation?.getCurrentPosition(
       (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
       () => {},
     );
+
+    setLeafletReady(true);
   }, []);
 
   function flyToPost(post: any) {
@@ -67,6 +70,22 @@ export default function MapViewClient({ posts }: { posts: any[] }) {
     setSelected(post);
     setShowList(false);
   }
+
+  if (!leafletReady)
+    return (
+      <div
+        style={{
+          height: "calc(100vh - 130px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#888",
+          fontSize: 14,
+        }}
+      >
+        Loading map...
+      </div>
+    );
 
   return (
     <div style={{ height: "calc(100vh - 130px)", position: "relative" }}>
