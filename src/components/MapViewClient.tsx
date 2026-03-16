@@ -1,6 +1,20 @@
 "use client";
 import { useEffect, useState } from "react";
+import { MapContainer, TileLayer, CircleMarker } from "react-leaflet";
 import { Clock, List, X } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import { useMap } from "react-leaflet";
+
+// Fix leaflet default icon
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
 
 const SOURCE_COLORS: Record<string, string> = {
   temple: "#E8640A",
@@ -25,9 +39,16 @@ function timeLeft(pickup_until: string) {
   return `${mins}m left`;
 }
 
-export default function MapView({ posts }: { posts: any[] }) {
+function MapController({ onMap }: { onMap: (map: any) => void }) {
+  const map = useMap();
+  useEffect(() => {
+    onMap(map);
+  }, [map]);
+  return null;
+}
+
+export default function MapViewClient({ posts }: { posts: any[] }) {
   const [selected, setSelected] = useState<any>(null);
-  const [MapComponents, setMapComponents] = useState<any>(null);
   const [userLocation, setUserLocation] = useState<[number, number]>([
     19.076, 72.877,
   ]);
@@ -35,69 +56,20 @@ export default function MapView({ posts }: { posts: any[] }) {
   const [mapRef, setMapRef] = useState<any>(null);
 
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
+    navigator.geolocation?.getCurrentPosition(
       (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
       () => {},
-    );
-
-    Promise.all([import("react-leaflet"), import("leaflet")]).then(
-      ([reactLeaflet, L]) => {
-        delete (L.Icon.Default.prototype as any)._getIconUrl;
-        L.Icon.Default.mergeOptions({
-          iconRetinaUrl:
-            "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-          iconUrl:
-            "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-          shadowUrl:
-            "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-        });
-        setMapComponents({ ...reactLeaflet, L });
-      },
     );
   }, []);
 
   function flyToPost(post: any) {
-    if (mapRef) {
-      mapRef.flyTo([post.lat, post.lng], 15, { duration: 0.8 });
-    }
+    if (mapRef) mapRef.flyTo([post.lat, post.lng], 15, { duration: 0.8 });
     setSelected(post);
     setShowList(false);
   }
 
-  if (!MapComponents)
-    return (
-      <div
-        style={{
-          height: "calc(100vh - 130px)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#888",
-          fontSize: 14,
-        }}
-      >
-        Loading map...
-      </div>
-    );
-
-  const { MapContainer, TileLayer, CircleMarker, useMap } = MapComponents;
-
-  // Component to grab map instance
-  function MapController() {
-    const map = useMap();
-    useEffect(() => {
-      setMapRef(map);
-    }, [map]);
-    return null;
-  }
-
   return (
     <div style={{ height: "calc(100vh - 130px)", position: "relative" }}>
-      <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      />
-
       <MapContainer
         center={userLocation}
         zoom={13}
@@ -108,7 +80,7 @@ export default function MapView({ posts }: { posts: any[] }) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <MapController />
+        <MapController onMap={setMapRef} />
 
         {posts.map((post) => (
           <CircleMarker
@@ -170,7 +142,7 @@ export default function MapView({ posts }: { posts: any[] }) {
         ))}
       </div>
 
-      {/* Active posts counter — tap to open list */}
+      {/* Active posts counter */}
       <button
         onClick={() => {
           setShowList((s) => !s);
@@ -217,7 +189,6 @@ export default function MapView({ posts }: { posts: any[] }) {
             animation: "slideDown 0.2s ease",
           }}
         >
-          {/* List header */}
           <div
             style={{
               padding: "0.75rem 1rem",
@@ -243,7 +214,6 @@ export default function MapView({ posts }: { posts: any[] }) {
             </button>
           </div>
 
-          {/* List items */}
           <div style={{ overflowY: "auto", maxHeight: 300 }}>
             {posts.length === 0 ? (
               <div
@@ -275,7 +245,6 @@ export default function MapView({ posts }: { posts: any[] }) {
                     alignItems: "center",
                   }}
                 >
-                  {/* Color dot */}
                   <div
                     style={{
                       width: 10,
@@ -286,7 +255,6 @@ export default function MapView({ posts }: { posts: any[] }) {
                       marginTop: 2,
                     }}
                   />
-
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div
                       style={{ fontWeight: 500, fontSize: 13, marginBottom: 1 }}
@@ -333,7 +301,6 @@ export default function MapView({ posts }: { posts: any[] }) {
                       </span>
                     </div>
                   </div>
-
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
                     <div
                       style={{
@@ -349,6 +316,45 @@ export default function MapView({ posts }: { posts: any[] }) {
                 </button>
               ))
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {posts.length === 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            zIndex: 1000,
+            background: "white",
+            borderRadius: 16,
+            padding: "1.5rem 2rem",
+            textAlign: "center",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
+            maxWidth: 260,
+          }}
+        >
+          <div style={{ fontSize: 36, marginBottom: 8 }}>🍱</div>
+          <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 6 }}>
+            No food nearby yet
+          </div>
+          <div
+            style={{
+              fontSize: 13,
+              color: "#888",
+              lineHeight: 1.5,
+              marginBottom: "1rem",
+            }}
+          >
+            Be the first to donate today.
+          </div>
+          <div
+            style={{ fontSize: 11, color: "var(--saffron)", fontWeight: 500 }}
+          >
+            TAP DONATE BELOW ↓
           </div>
         </div>
       )}
