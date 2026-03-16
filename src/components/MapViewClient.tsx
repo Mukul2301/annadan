@@ -496,22 +496,15 @@ export default function MapViewClient({ posts }: { posts: any[] }) {
               📍 {selected.address}
             </div>
           )}
-
-          <button
-            onClick={() => {
-              const lat = selected.lat;
-              const lng = selected.lng;
-              window.open(
-                `https://maps.google.com/maps?daddr=${lat},${lng}`,
-                "_blank",
-              );
-            }}
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               width: "100%",
               marginTop: "0.875rem",
               background: "var(--saffron)",
               color: "white",
-              border: "none",
               borderRadius: 10,
               padding: "0.875rem",
               fontWeight: 600,
@@ -522,10 +515,12 @@ export default function MapViewClient({ posts }: { posts: any[] }) {
               alignItems: "center",
               justifyContent: "center",
               gap: 8,
+              textDecoration: "none",
+              boxSizing: "border-box" as const,
             }}
           >
             📍 Get directions
-          </button>
+          </a>
         </div>
       )}
 
