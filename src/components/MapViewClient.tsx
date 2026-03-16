@@ -498,12 +498,14 @@ export default function MapViewClient({ posts }: { posts: any[] }) {
           )}
 
           <button
-            onClick={() =>
+            onClick={() => {
+              const lat = selected.lat;
+              const lng = selected.lng;
               window.open(
-                `https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`,
+                `https://maps.google.com/maps?daddr=${lat},${lng}`,
                 "_blank",
-              )
-            }
+              );
+            }}
             style={{
               width: "100%",
               marginTop: "0.875rem",
