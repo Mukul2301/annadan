@@ -30,6 +30,17 @@ function MapController({ onMap }: { onMap: (map: any) => void }) {
   const map = useMap();
   useEffect(() => {
     onMap(map);
+    // Auto-center to user location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          map.flyTo([pos.coords.latitude, pos.coords.longitude], 13, {
+            duration: 1,
+          });
+        },
+        () => {}, // silently fail — stays on default center
+      );
+    }
   }, [map]);
   return null;
 }

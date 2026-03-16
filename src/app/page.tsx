@@ -23,21 +23,20 @@ export default function Home() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "posts" },
         (payload) => {
-          // Only add if not expired
-          if (new Date(payload.new.pickup_until) > new Date()) {
-            setPosts((prev) => [payload.new, ...prev]);
-            setTotalMeals((prev) => prev + payload.new.meals_estimated);
-            setTotalKg((prev) => prev + payload.new.quantity_kg);
-          }
+          setPosts((prev) => [payload.new as any, ...prev]);
+          setTotalMeals((prev) => prev + payload.new.meals_estimated);
+          setTotalKg((prev) => prev + payload.new.quantity_kg);
         },
       )
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "posts" },
         (payload) => {
-          // Remove post from map when it gets marked claimed/expired
-          if (payload.new.claimed) {
+          // Handle soft deletes — remove from map instantly
+          if (payload.new.deleted) {
             setPosts((prev) => prev.filter((p) => p.id !== payload.new.id));
+            setTotalMeals((prev) => prev - payload.new.meals_estimated);
+            setTotalKg((prev) => prev - payload.new.quantity_kg);
           }
         },
       )
@@ -119,7 +118,13 @@ export default function Home() {
         <div style={{ display: "flex", gap: "1rem" }}>
           <div style={{ textAlign: "center" }}>
             <div
-              style={{ fontSize: 16, fontWeight: 600, color: "var(--saffron)" }}
+              key={totalMeals}
+              style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: "var(--saffron)",
+                animation: "countUp 0.4s ease",
+              }}
             >
               {totalMeals.toLocaleString()}
             </div>

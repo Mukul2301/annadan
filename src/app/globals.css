@@ -15,3 +15,8 @@
 
 * { box-sizing: border-box; }
 body { font-family: 'Sora', sans-serif; background: var(--cream); color: var(--earth); }
+
+@keyframes countUp {
+  from { transform: translateY(6px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
