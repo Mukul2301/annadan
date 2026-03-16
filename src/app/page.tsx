@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 import { Leaf, Plus, User, Map } from "lucide-react";
-import MapView from "@/components/MapView";
+import MapView from "@/components/MapViewClient";
 import PostModal from "@/components/PostModal";
 import DonorProfile from "@/components/DonorProfile";
 
