@@ -44,25 +44,25 @@ export default function MapViewClient({ posts }: { posts: any[] }) {
   const [leafletReady, setLeafletReady] = useState(false);
 
   useEffect(() => {
-    // All leaflet imports must be client-side only
-    const L = require("leaflet");
-    require("leaflet/dist/leaflet.css");
+    import("leaflet").then((L) => {
+      import("leaflet/dist/leaflet.css");
 
-    delete (L.Icon.Default.prototype as any)._getIconUrl;
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl:
-        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-      iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-      shadowUrl:
-        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+      delete (L.default.Icon.Default.prototype as any)._getIconUrl;
+      L.default.Icon.Default.mergeOptions({
+        iconRetinaUrl:
+          "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+        shadowUrl:
+          "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+      });
+
+      navigator.geolocation?.getCurrentPosition(
+        (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
+        () => {},
+      );
+
+      setLeafletReady(true);
     });
-
-    navigator.geolocation?.getCurrentPosition(
-      (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
-      () => {},
-    );
-
-    setLeafletReady(true);
   }, []);
 
   function flyToPost(post: any) {
